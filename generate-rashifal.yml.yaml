@@ -1,0 +1,68 @@
+name: Generate Panchang & Rashifal
+
+on:
+  workflow_dispatch:
+    inputs:
+      bs_year:
+        description: "Bikram Sambat Year (e.g. 2083)"
+        required: true
+        default: "2083"
+      period:
+        description: "Period (daily, weekly, monthly, yearly, all)"
+        required: true
+        default: "all"
+  schedule:
+    # हरेक दिन 00:15 UTC (नेपाल समय ~06:00 AM)
+    - cron: "15 0 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  build-rashifal:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate Panchang and Rashifal
+        env:
+          BS_YEAR: ${{ github.event.inputs.bs_year || '2083' }}
+          PERIOD: ${{ github.event.inputs.period || 'all' }}
+        run: |
+          mkdir -p output
+          python3 panchang.py "${BS_YEAR}"
+          mv "panchang_${BS_YEAR}.json" "output/panchang_${BS_YEAR}.json"
+          python3 rashifal.py "output/panchang_${BS_YEAR}.json" \
+            --period "${PERIOD}" \
+            --out-json "output/rashifal_${BS_YEAR}.json" \
+            --out-md "output/rashifal_${BS_YEAR}.md"
+
+      - name: Upload generated files as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: panchang-rashifal-${{ github.event.inputs.bs_year || '2083' }}
+          path: output/
+
+      - name: Commit and push updated files to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add output/
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Update Panchang & Rashifal for BS ${{ github.event.inputs.bs_year || '2083' }}"
+            git push
+          fi
