@@ -1,4 +1,4 @@
-# Nepali Panchang & Rashifal Generator (`np-details`)
+#(`np-details`)
 
 बाह्य API मा भर नपरी **Swiss Ephemeris (`pyswisseph`)** र **`nepali-datetime`** प्रयोग गरी विक्रम संवत् (B.S.) को पञ्चाङ्ग, ग्रह गोचर (Transit), र १२ वटै राशिको **दैनिक, साप्ताहिक, मासिक र वार्षिक राशिफल** जेनेरेट गर्ने Python प्रोजेक्ट।
 
